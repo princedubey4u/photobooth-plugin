@@ -4,10 +4,11 @@ class PBQR_Activator {
     
     public static function activate() {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'pbqr_quotes';
         $charset_collate = $wpdb->get_charset_collate();
 
-        $sql = "CREATE TABLE IF NOT EXISTS $table_name (
+        // Quotes table
+        $quotes_table = $wpdb->prefix . 'pbqr_quotes';
+        $sql1 = "CREATE TABLE IF NOT EXISTS $quotes_table (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             customer_name VARCHAR(200) NOT NULL,
             customer_email VARCHAR(200) NOT NULL,
@@ -21,11 +22,42 @@ class PBQR_Activator {
             extras_ids TEXT NULL,
             extras_names TEXT NULL,
             message TEXT NULL,
+            status VARCHAR(50) DEFAULT 'pending',
+            order_id BIGINT(20) UNSIGNED NULL,
             created_at DATETIME NOT NULL,
-            PRIMARY KEY (id)
+            PRIMARY KEY (id),
+            KEY status (status),
+            KEY event_date (event_date),
+            KEY created_at (created_at)
+        ) $charset_collate;";
+
+        // Blocked dates table
+        $blocked_dates_table = $wpdb->prefix . 'pbqr_blocked_dates';
+        $sql2 = "CREATE TABLE IF NOT EXISTS $blocked_dates_table (
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            blocked_date DATE NOT NULL,
+            reason VARCHAR(255) NULL,
+            created_at DATETIME NOT NULL,
+            PRIMARY KEY (id),
+            UNIQUE KEY blocked_date (blocked_date)
+        ) $charset_collate;";
+
+        // Quote notes table
+        $notes_table = $wpdb->prefix . 'pbqr_quote_notes';
+        $sql3 = "CREATE TABLE IF NOT EXISTS $notes_table (
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            quote_id BIGINT(20) UNSIGNED NOT NULL,
+            note TEXT NOT NULL,
+            created_by BIGINT(20) UNSIGNED NOT NULL,
+            created_at DATETIME NOT NULL,
+            PRIMARY KEY (id),
+            KEY quote_id (quote_id),
+            KEY created_at (created_at)
         ) $charset_collate;";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-        dbDelta($sql);
+        dbDelta($sql1);
+        dbDelta($sql2);
+        dbDelta($sql3);
     }
 }
