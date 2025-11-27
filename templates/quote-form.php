@@ -2,7 +2,7 @@
 if (!defined('ABSPATH')) exit;
 
 if (!class_exists('WooCommerce')) {
-    echo '<p>WooCommerce is required for this form.</p>';
+    echo '<p>WooCommerce wird für dieses Formular benötigt.</p>';
     return;
 }
 
@@ -12,14 +12,14 @@ $blocked_dates_table = $wpdb->prefix . 'pbqr_blocked_dates';
 $blocked_dates = $wpdb->get_col("SELECT blocked_date FROM $blocked_dates_table WHERE blocked_date >= CURDATE()");
 $blocked_dates_json = json_encode($blocked_dates);
 
-// Packages
+// Packages with images
 $packages = wc_get_products([
     'status'   => 'publish',
     'limit'    => -1,
     'category' => ['photobooth-packages'],
 ]);
 
-// Extras
+// Extras with images
 $extras = wc_get_products([
     'status'   => 'publish',
     'limit'    => -1,
@@ -30,7 +30,7 @@ $default_package_id = isset($GLOBALS['pbqr_default_package_id']) ? $GLOBALS['pbq
 
 // Success message
 if (isset($_GET['pbqr_success']) && $_GET['pbqr_success'] == '1') {
-    echo '<div class="pbqr-alert pbqr-alert-success">Thank you! Your quote request has been submitted successfully.</div>';
+    echo '<div class="pbqr-alert pbqr-alert-success">Vielen Dank! Ihre Angebotsanfrage wurde erfolgreich übermittelt.</div>';
 }
 
 // Get pre-selected package/extra from URL
@@ -142,6 +142,19 @@ $preselected_extra = isset($_GET['extra']) ? intval($_GET['extra']) : 0;
     color: #c62828 !important;
     cursor: not-allowed !important;
 }
+.pbqr-product-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+}
+.pbqr-card-description {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0.8rem 0;
+    line-height: 1.5;
+}
 </style>
 
 <form method="POST" class="pbqr-wrapper" id="pbqrForm">
@@ -157,57 +170,69 @@ $preselected_extra = isset($_GET['extra']) ? intval($_GET['extra']) : 0;
     <div class="pbqr-step-wizard">
         <div class="pbqr-step active" data-step="1">
             <div class="pbqr-step-circle">1</div>
-            <div class="pbqr-step-label">Event Details</div>
+            <div class="pbqr-step-label">Veranstaltung</div>
         </div>
         <div class="pbqr-step" data-step="2">
             <div class="pbqr-step-circle">2</div>
-            <div class="pbqr-step-label">Package</div>
+            <div class="pbqr-step-label">Paket</div>
         </div>
         <div class="pbqr-step" data-step="3">
             <div class="pbqr-step-circle">3</div>
-            <div class="pbqr-step-label">Add-ons</div>
+            <div class="pbqr-step-label">Extras</div>
         </div>
         <div class="pbqr-step" data-step="4">
             <div class="pbqr-step-circle">4</div>
-            <div class="pbqr-step-label">Contact Info</div>
+            <div class="pbqr-step-label">Kontakt</div>
         </div>
         <div class="pbqr-step" data-step="5">
             <div class="pbqr-step-circle">5</div>
-            <div class="pbqr-step-label">Review</div>
+            <div class="pbqr-step-label">Überprüfung</div>
         </div>
     </div>
 
     <!-- STEP 1: EVENT DETAILS -->
     <div class="pbqr-form-step active" data-step="1">
         <section class="pbqr-section pbqr-section-event">
-            <h2 class="pbqr-section-title">1. Event Details</h2>
+            <h2 class="pbqr-section-title">1. Veranstaltungsdetails</h2>
+            <p style="margin-bottom: 1.5rem; color: #666;">Bitte geben Sie alle Details zu Ihrer Veranstaltung an.</p>
 
             <div class="pbqr-event-grid">
                 <div class="pbqr-field">
-                    <label>Event Date *</label>
+                    <label>Art der Veranstaltung *</label>
+                    <select name="event_type" required style="width: 100%; border-radius: 10px; border: 1px solid #ddd; background: #ffffff; padding: 0.6rem 0.75rem; color: #333333; font-size: 0.95rem;">
+                        <option value="">Bitte wählen...</option>
+                        <option value="Hochzeit">Hochzeit</option>
+                        <option value="Geburtstag">Geburtstag</option>
+                        <option value="Firmenveranstaltung">Firmenveranstaltung</option>
+                        <option value="Messe">Messe</option>
+                        <option value="Sonstiges">Sonstiges</option>
+                    </select>
+                </div>
+                <div class="pbqr-field">
+                    <label>Datum der Veranstaltung *</label>
                     <input type="date" name="event_date" id="event_date" required min="<?php echo date('Y-m-d'); ?>">
                 </div>
                 <div class="pbqr-field">
-                    <label>Event Location *</label>
-                    <input type="text" name="event_location" placeholder="e.g., New York, Hall A" required>
-                </div>
-                <div class="pbqr-field">
-                    <label>Start Time *</label>
+                    <label>Startzeit *</label>
                     <input type="time" name="event_time" required>
                 </div>
                 <div class="pbqr-field">
-                    <label>Number of Hours *</label>
+                    <label>Anzahl der Stunden *</label>
                     <input type="number" name="event_hours" min="1" max="24" required>
+                </div>
+                <div class="pbqr-field" style="grid-column: 1 / -1;">
+                    <label>Veranstaltungsort *</label>
+                    <input type="text" name="event_location" placeholder="z.B. Berlin, Halle A" required>
                 </div>
             </div>
 
             <div class="pbqr-availability-hint">
-                🎉 Once you select a date, we'll check the availability of your preferred photobooth.
+                🎉 Sobald Sie ein Datum auswählen, prüfen wir die Verfügbarkeit Ihrer bevorzugten Fotobox.
             </div>
 
             <div class="pbqr-step-buttons">
                 <div></div>
-                <button type="button" class="pbqr-btn-primary pbqr-next-btn">Next Step →</button>
+                <button type="button" class="pbqr-btn-primary pbqr-next-btn">Nächster Schritt →</button>
             </div>
         </section>
     </div>
@@ -215,7 +240,8 @@ $preselected_extra = isset($_GET['extra']) ? intval($_GET['extra']) : 0;
     <!-- STEP 2: PACKAGE SELECTION -->
     <div class="pbqr-form-step" data-step="2">
         <section class="pbqr-section pbqr-section-packages">
-            <h2 class="pbqr-section-title">2. Select Your Package</h2>
+            <h2 class="pbqr-section-title">2. Wählen Sie Ihr Paket</h2>
+            <p style="margin-bottom: 1.5rem; color: #666;">Wählen Sie das Paket aus, das am besten zu Ihrer Veranstaltung passt.</p>
 
             <?php if ($packages): ?>
                 <div class="pbqr-card-grid">
@@ -224,6 +250,8 @@ $preselected_extra = isset($_GET['extra']) ? intval($_GET['extra']) : 0;
                             $pid = $package->get_id();
                             $checked = ($preselected_package && $preselected_package == $pid) ? 'checked' : '';
                             $is_checked = $checked ? ' pbqr-card--active' : '';
+                            $image_id = $package->get_image_id();
+                            $image_url = $image_id ? wp_get_attachment_image_url($image_id, 'medium') : '';
                         ?>
                         <label class="pbqr-card<?php echo $is_checked; ?>" data-package-id="<?php echo esc_attr($pid); ?>">
                             <input type="radio"
@@ -232,6 +260,11 @@ $preselected_extra = isset($_GET['extra']) ? intval($_GET['extra']) : 0;
                                    class="pbqr-card-radio"
                                    required
                                    <?php echo $checked; ?>>
+                            
+                            <?php if ($image_url): ?>
+                                <img src="<?php echo esc_url($image_url); ?>" alt="<?php echo esc_attr($package->get_name()); ?>" class="pbqr-product-image">
+                            <?php endif; ?>
+                            
                             <div class="pbqr-card-header">
                                 <span class="pbqr-card-title">
                                     <?php echo esc_html($package->get_name()); ?>
@@ -242,27 +275,29 @@ $preselected_extra = isset($_GET['extra']) ? intval($_GET['extra']) : 0;
                             </div>
 
                             <div class="pbqr-card-body">
-                                <?php
-                                $short_desc = $package->get_short_description();
-                                if ($short_desc) {
-                                    echo wp_kses_post(wpautop($short_desc));
-                                }
-                                ?>
+                                <div class="pbqr-card-description">
+                                    <?php
+                                    $description = $package->get_description();
+                                    if ($description) {
+                                        echo wp_kses_post(wpautop($description));
+                                    }
+                                    ?>
+                                </div>
                             </div>
 
                             <div class="pbqr-card-footer">
-                                <span class="pbqr-card-cta">Choose</span>
+                                <span class="pbqr-card-cta">Auswählen</span>
                             </div>
                         </label>
                     <?php endforeach; ?>
                 </div>
             <?php else: ?>
-                <p>No photobooth packages found.</p>
+                <p>Keine Fotobox-Pakete gefunden.</p>
             <?php endif; ?>
 
             <div class="pbqr-step-buttons">
-                <button type="button" class="pbqr-btn-secondary pbqr-prev-btn">← Previous</button>
-                <button type="button" class="pbqr-btn-primary pbqr-next-btn">Next Step →</button>
+                <button type="button" class="pbqr-btn-secondary pbqr-prev-btn">← Zurück</button>
+                <button type="button" class="pbqr-btn-primary pbqr-next-btn">Nächster Schritt →</button>
             </div>
         </section>
     </div>
@@ -270,7 +305,8 @@ $preselected_extra = isset($_GET['extra']) ? intval($_GET['extra']) : 0;
     <!-- STEP 3: EXTRAS -->
     <div class="pbqr-form-step" data-step="3">
         <section class="pbqr-section pbqr-section-extras">
-            <h2 class="pbqr-section-title">3. Add-ons & Extras</h2>
+            <h2 class="pbqr-section-title">3. Extras & Zusatzleistungen</h2>
+            <p style="margin-bottom: 1.5rem; color: #666;">Wählen Sie zusätzliche Optionen, um Ihre Veranstaltung noch besonderer zu machen.</p>
 
             <?php if ($extras): ?>
                 <div class="pbqr-extra-grid">
@@ -278,6 +314,8 @@ $preselected_extra = isset($_GET['extra']) ? intval($_GET['extra']) : 0;
                         <?php
                             $eid = $extra->get_id();
                             $checked = ($preselected_extra && $preselected_extra == $eid) ? 'checked' : '';
+                            $image_id = $extra->get_image_id();
+                            $image_url = $image_id ? wp_get_attachment_image_url($image_id, 'thumbnail') : '';
                         ?>
                         <label class="pbqr-extra-card" data-extra-id="<?php echo esc_attr($eid); ?>">
                             <input type="checkbox"
@@ -286,7 +324,11 @@ $preselected_extra = isset($_GET['extra']) ? intval($_GET['extra']) : 0;
                                    class="pbqr-extra-checkbox"
                                    <?php echo $checked; ?>>
                             <div class="pbqr-extra-image">
-                                <?php echo $extra->get_image('medium'); ?>
+                                <?php if ($image_url): ?>
+                                    <img src="<?php echo esc_url($image_url); ?>" alt="<?php echo esc_attr($extra->get_name()); ?>">
+                                <?php else: ?>
+                                    <div style="width: 100%; height: 120px; background: #f0f0f0; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #999;">Kein Bild</div>
+                                <?php endif; ?>
                             </div>
                             <div class="pbqr-extra-content">
                                 <div class="pbqr-extra-title-row">
@@ -299,14 +341,14 @@ $preselected_extra = isset($_GET['extra']) ? intval($_GET['extra']) : 0;
                                 </div>
                                 <div class="pbqr-extra-desc">
                                     <?php
-                                    $short = $extra->get_short_description();
-                                    if ($short) {
-                                        echo wp_kses_post(wpautop($short));
+                                    $description = $extra->get_description();
+                                    if ($description) {
+                                        echo wp_kses_post(wpautop($description));
                                     }
                                     ?>
                                 </div>
                                 <div class="pbqr-extra-cta">
-                                    <span class="pbqr-extra-toggle-label">Add</span>
+                                    <span class="pbqr-extra-toggle-label">Hinzufügen</span>
                                     <span class="pbqr-extra-toggle"></span>
                                 </div>
                             </div>
@@ -314,12 +356,12 @@ $preselected_extra = isset($_GET['extra']) ? intval($_GET['extra']) : 0;
                     <?php endforeach; ?>
                 </div>
             <?php else: ?>
-                <p>No add-ons available.</p>
+                <p>Keine Extras verfügbar.</p>
             <?php endif; ?>
 
             <div class="pbqr-step-buttons">
-                <button type="button" class="pbqr-btn-secondary pbqr-prev-btn">← Previous</button>
-                <button type="button" class="pbqr-btn-primary pbqr-next-btn">Next Step →</button>
+                <button type="button" class="pbqr-btn-secondary pbqr-prev-btn">← Zurück</button>
+                <button type="button" class="pbqr-btn-primary pbqr-next-btn">Nächster Schritt →</button>
             </div>
         </section>
     </div>
@@ -327,36 +369,57 @@ $preselected_extra = isset($_GET['extra']) ? intval($_GET['extra']) : 0;
     <!-- STEP 4: CONTACT DATA -->
     <div class="pbqr-form-step" data-step="4">
         <section class="pbqr-section pbqr-section-contact">
-            <h2 class="pbqr-section-title">4. Your Contact Information</h2>
+            <h2 class="pbqr-section-title">4. Ihre Kontaktinformationen</h2>
+            <p style="margin-bottom: 1.5rem; color: #666;">Bitte füllen Sie alle Kontaktdaten aus, damit wir Ihnen ein Angebot erstellen können.</p>
 
             <div class="pbqr-contact-grid">
                 <div class="pbqr-field">
-                    <label>Email Address *</label>
+                    <label>Vorname *</label>
+                    <input type="text" name="customer_first_name" required>
+                </div>
+                <div class="pbqr-field">
+                    <label>Nachname *</label>
+                    <input type="text" name="customer_last_name" required>
+                </div>
+                <div class="pbqr-field">
+                    <label>Firma (optional)</label>
+                    <input type="text" name="customer_company">
+                </div>
+                <div class="pbqr-field">
+                    <label>E-Mail-Adresse *</label>
                     <input type="email" name="customer_email" required>
                 </div>
                 <div class="pbqr-field">
-                    <label>Phone Number *</label>
+                    <label>Telefonnummer *</label>
                     <input type="text" name="customer_phone" required>
                 </div>
                 <div class="pbqr-field">
-                    <label>First Name *</label>
-                    <input type="text" name="customer_name" required>
+                    <label>Straße & Hausnummer *</label>
+                    <input type="text" name="customer_street" required>
                 </div>
                 <div class="pbqr-field">
-                    <label>Company (optional)</label>
-                    <input type="text" name="company">
+                    <label>Postleitzahl *</label>
+                    <input type="text" name="customer_postal_code" required>
+                </div>
+                <div class="pbqr-field">
+                    <label>Stadt *</label>
+                    <input type="text" name="customer_city" required>
+                </div>
+                <div class="pbqr-field" style="grid-column: 1 / -1;">
+                    <label>Land *</label>
+                    <input type="text" name="customer_country" value="Deutschland" required>
                 </div>
             </div>
 
-            <div class="pbqr-field">
-                <label>Additional Information / Special Requests (optional)</label>
+            <div class="pbqr-field" style="margin-top: 1rem;">
+                <label>Zusätzliche Informationen / Besondere Wünsche (optional)</label>
                 <textarea name="message" rows="4"
-                          placeholder="e.g., preferred layout, special wishes, etc."></textarea>
+                          placeholder="z.B. bevorzugtes Layout, spezielle Wünsche, etc."></textarea>
             </div>
 
             <div class="pbqr-step-buttons">
-                <button type="button" class="pbqr-btn-secondary pbqr-prev-btn">← Previous</button>
-                <button type="button" class="pbqr-btn-primary pbqr-next-btn">Review →</button>
+                <button type="button" class="pbqr-btn-secondary pbqr-prev-btn">← Zurück</button>
+                <button type="button" class="pbqr-btn-primary pbqr-next-btn">Überprüfen →</button>
             </div>
         </section>
     </div>
@@ -364,19 +427,20 @@ $preselected_extra = isset($_GET['extra']) ? intval($_GET['extra']) : 0;
     <!-- STEP 5: REVIEW -->
     <div class="pbqr-form-step" data-step="5">
         <section class="pbqr-section pbqr-section-review">
-            <h2 class="pbqr-section-title">5. Review Your Request</h2>
+            <h2 class="pbqr-section-title">5. Überprüfen Sie Ihre Anfrage</h2>
+            <p style="margin-bottom: 1.5rem; color: #666;">Bitte überprüfen Sie alle Angaben, bevor Sie die Anfrage absenden.</p>
 
             <div id="reviewContent"></div>
 
             <div class="pbqr-step-buttons">
-                <button type="button" class="pbqr-btn-secondary pbqr-prev-btn">← Previous</button>
+                <button type="button" class="pbqr-btn-secondary pbqr-prev-btn">← Zurück</button>
                 <button type="submit" class="pbqr-btn-primary">
-                    📩 Submit Quote Request
+                    📩 Angebotsanfrage absenden
                 </button>
             </div>
             
             <p class="pbqr-small">
-                By clicking "Submit Quote Request", you submit a non-binding inquiry to us.
+                Mit dem Klick auf "Angebotsanfrage absenden" senden Sie uns eine unverbindliche Anfrage.
             </p>
         </section>
     </div>
@@ -392,7 +456,6 @@ jQuery(document).ready(function($) {
     function updateURL() {
         var params = new URLSearchParams(window.location.search);
         
-        // Get selected package
         var selectedPackage = $('input[name="package_id"]:checked').val();
         if (selectedPackage) {
             params.set('package', selectedPackage);
@@ -400,7 +463,6 @@ jQuery(document).ready(function($) {
             params.delete('package');
         }
         
-        // Get selected extras
         var selectedExtras = [];
         $('input[name="extras[]"]:checked').each(function() {
             selectedExtras.push($(this).val());
@@ -415,38 +477,30 @@ jQuery(document).ready(function($) {
         window.history.pushState({}, '', newURL);
     }
 
-    // Block dates in date picker
     $('#event_date').on('change', function() {
         var selectedDate = $(this).val();
         if (blockedDates.includes(selectedDate)) {
-            alert('This date is not available. Please select another date.');
+            alert('Dieses Datum ist nicht verfügbar. Bitte wählen Sie ein anderes Datum.');
             $(this).val('');
         }
     });
 
-    // Package selection - update URL
     $('.pbqr-card-radio').on('change', function() {
         $('.pbqr-card').removeClass('pbqr-card--active');
         $(this).closest('.pbqr-card').addClass('pbqr-card--active');
         updateURL();
     });
 
-    // Extra selection - update URL
     $('.pbqr-extra-checkbox').on('change', function() {
         updateURL();
     });
 
-    // Step navigation
     function showStep(step) {
         currentStep = step;
         
-        // Hide all steps
         $('.pbqr-form-step').removeClass('active');
-        
-        // Show current step
         $('.pbqr-form-step[data-step="' + step + '"]').addClass('active');
         
-        // Update wizard
         $('.pbqr-step').removeClass('active completed');
         $('.pbqr-step[data-step="' + step + '"]').addClass('active');
         $('.pbqr-step').each(function() {
@@ -455,16 +509,13 @@ jQuery(document).ready(function($) {
             }
         });
         
-        // Update progress bar
         var progress = (step / totalSteps) * 100;
         $('#progressFill').css('width', progress + '%');
         
-        // Scroll to top
         $('html, body').animate({
             scrollTop: $('.pbqr-wrapper').offset().top - 100
         }, 300);
 
-        // If step 5 (review), populate review content
         if (step === 5) {
             populateReview();
         }
@@ -473,15 +524,14 @@ jQuery(document).ready(function($) {
     function populateReview() {
         var html = '<div style="background: #fafafa; padding: 1.5rem; border-radius: 12px;">';
         
-        // Event Details
-        html += '<h3 style="margin-top: 0; color: #333;">Event Details</h3>';
-        html += '<p><strong>Date:</strong> ' + $('input[name="event_date"]').val() + '</p>';
-        html += '<p><strong>Location:</strong> ' + $('input[name="event_location"]').val() + '</p>';
-        html += '<p><strong>Time:</strong> ' + $('input[name="event_time"]').val() + '</p>';
-        html += '<p><strong>Duration:</strong> ' + $('input[name="event_hours"]').val() + ' hours</p>';
+        html += '<h3 style="margin-top: 0; color: #333;">Veranstaltungsdetails</h3>';
+        html += '<p><strong>Art:</strong> ' + $('select[name="event_type"]').val() + '</p>';
+        html += '<p><strong>Datum:</strong> ' + $('input[name="event_date"]').val() + '</p>';
+        html += '<p><strong>Ort:</strong> ' + $('input[name="event_location"]').val() + '</p>';
+        html += '<p><strong>Zeit:</strong> ' + $('input[name="event_time"]').val() + '</p>';
+        html += '<p><strong>Dauer:</strong> ' + $('input[name="event_hours"]').val() + ' Stunden</p>';
         
-        // Package
-        html += '<h3 style="color: #333; margin-top: 1.5rem;">Selected Package</h3>';
+        html += '<h3 style="color: #333; margin-top: 1.5rem;">Gewähltes Paket</h3>';
         var selectedPackage = $('input[name="package_id"]:checked');
         if (selectedPackage.length) {
             var packageCard = selectedPackage.closest('.pbqr-card');
@@ -489,10 +539,9 @@ jQuery(document).ready(function($) {
             html += packageCard.find('.pbqr-card-price').text() + '</p>';
         }
         
-        // Extras
         var selectedExtras = $('input[name="extras[]"]:checked');
         if (selectedExtras.length) {
-            html += '<h3 style="color: #333; margin-top: 1.5rem;">Selected Add-ons</h3>';
+            html += '<h3 style="color: #333; margin-top: 1.5rem;">Gewählte Extras</h3>';
             html += '<ul style="margin: 0; padding-left: 1.2rem;">';
             selectedExtras.each(function() {
                 var extraCard = $(this).closest('.pbqr-extra-card');
@@ -501,24 +550,27 @@ jQuery(document).ready(function($) {
             });
             html += '</ul>';
         } else {
-            html += '<h3 style="color: #333; margin-top: 1.5rem;">Selected Add-ons</h3>';
-            html += '<p>None</p>';
+            html += '<h3 style="color: #333; margin-top: 1.5rem;">Gewählte Extras</h3>';
+            html += '<p>Keine</p>';
         }
         
-        // Contact Info
-        html += '<h3 style="color: #333; margin-top: 1.5rem;">Contact Information</h3>';
-        html += '<p><strong>Name:</strong> ' + $('input[name="customer_name"]').val() + '</p>';
-        html += '<p><strong>Email:</strong> ' + $('input[name="customer_email"]').val() + '</p>';
-        html += '<p><strong>Phone:</strong> ' + $('input[name="customer_phone"]').val() + '</p>';
+        html += '<h3 style="color: #333; margin-top: 1.5rem;">Kontaktinformationen</h3>';
+        html += '<p><strong>Name:</strong> ' + $('input[name="customer_first_name"]').val() + ' ' + $('input[name="customer_last_name"]').val() + '</p>';
         
-        var company = $('input[name="company"]').val();
+        var company = $('input[name="customer_company"]').val();
         if (company) {
-            html += '<p><strong>Company:</strong> ' + company + '</p>';
+            html += '<p><strong>Firma:</strong> ' + company + '</p>';
         }
+        
+        html += '<p><strong>E-Mail:</strong> ' + $('input[name="customer_email"]').val() + '</p>';
+        html += '<p><strong>Telefon:</strong> ' + $('input[name="customer_phone"]').val() + '</p>';
+        html += '<p><strong>Adresse:</strong> ' + $('input[name="customer_street"]').val() + ', ';
+        html += $('input[name="customer_postal_code"]').val() + ' ' + $('input[name="customer_city"]').val() + ', ';
+        html += $('input[name="customer_country"]').val() + '</p>';
         
         var message = $('textarea[name="message"]').val();
         if (message) {
-            html += '<p><strong>Message:</strong><br>' + message + '</p>';
+            html += '<p><strong>Nachricht:</strong><br>' + message + '</p>';
         }
         
         html += '</div>';
@@ -526,7 +578,6 @@ jQuery(document).ready(function($) {
         $('#reviewContent').html(html);
     }
 
-    // Validate current step
     function validateStep(step) {
         var isValid = true;
         var currentStepDiv = $('.pbqr-form-step[data-step="' + step + '"]');
@@ -536,13 +587,13 @@ jQuery(document).ready(function($) {
                 var name = $(this).attr('name');
                 if (!$('input[name="' + name + '"]:checked').length) {
                     isValid = false;
-                    alert('Please select a package.');
+                    alert('Bitte wählen Sie ein Paket aus.');
                     return false;
                 }
             } else if (!$(this).val()) {
                 isValid = false;
                 $(this).focus();
-                alert('Please fill in all required fields.');
+                alert('Bitte füllen Sie alle Pflichtfelder aus.');
                 return false;
             }
         });
@@ -550,7 +601,6 @@ jQuery(document).ready(function($) {
         return isValid;
     }
 
-    // Next button
     $('.pbqr-next-btn').on('click', function() {
         if (validateStep(currentStep)) {
             if (currentStep < totalSteps) {
@@ -559,14 +609,12 @@ jQuery(document).ready(function($) {
         }
     });
 
-    // Previous button
     $('.pbqr-prev-btn').on('click', function() {
         if (currentStep > 1) {
             showStep(currentStep - 1);
         }
     });
 
-    // Form submission
     $('#pbqrForm').on('submit', function(e) {
         if (!validateStep(currentStep)) {
             e.preventDefault();
