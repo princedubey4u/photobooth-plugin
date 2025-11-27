@@ -33,7 +33,10 @@ class PBQR_Form_Handler {
         $extras_ids_arr      = isset($_POST['extras']) ? array_map('intval', (array)$_POST['extras']) : [];
         $message             = sanitize_textarea_field($_POST['message'] ?? '');
 
-        if (!$customer_first_name || !$customer_last_name || !$customer_email || !$package_id) {
+        // Validation
+        if (!$customer_first_name || !$customer_last_name || !$customer_email || !$customer_phone || 
+            !$customer_street || !$customer_postal_code || !$customer_city || !$customer_country || 
+            !$event_type || !$event_date || !$event_location || !$event_time || !$event_hours || !$package_id) {
             wp_safe_redirect(add_query_arg('pbqr_error', '1', wp_get_referer()));
             exit;
         }
@@ -67,8 +70,15 @@ class PBQR_Form_Handler {
         // Insert into database
         $wpdb->insert($table_name, [
             'customer_name'   => $customer_name,
+            'customer_first_name'  => $customer_first_name,
+            'customer_last_name'   => $customer_last_name,
+            'customer_company'     => $customer_company,
             'customer_email'  => $customer_email,
             'customer_phone'  => $customer_phone,
+            'customer_street'      => $customer_street,
+            'customer_postal_code' => $customer_postal_code,
+            'customer_city'        => $customer_city,
+            'customer_country'     => $customer_country,
             'event_type'      => $event_type,
             'event_date'      => $event_date,
             'event_location'  => $event_location,
@@ -79,35 +89,28 @@ class PBQR_Form_Handler {
             'extras_ids'      => $extras_ids_str,
             'extras_names'    => $extras_names_str,
             'message'         => $message,
-            'customer_first_name'  => $customer_first_name,
-            'customer_last_name'   => $customer_last_name,
-            'customer_company'     => $customer_company,
-            'customer_street'      => $customer_street,
-            'customer_postal_code' => $customer_postal_code,
-            'customer_city'        => $customer_city,
-            'customer_country'     => $customer_country,
             'created_at'      => current_time('mysql'),
             'status'          => 'pending',
         ]);
 
         // Send email to admin
-        self::send_admin_email($customer_name, $customer_email, $customer_phone, $event_type, $event_date, 
-                               $event_time, $event_location, $event_hours, $package_name, 
-                               $extras_names_str, $message, $customer_company, $customer_street, 
-                               $customer_postal_code, $customer_city, $customer_country);
+        self::send_admin_email($customer_first_name, $customer_last_name, $customer_email, $customer_phone, 
+                               $customer_company, $customer_street, $customer_postal_code, $customer_city, $customer_country,
+                               $event_type, $event_date, $event_time, $event_location, $event_hours, 
+                               $package_name, $extras_names_str, $message);
 
         // Send confirmation email to customer
-        self::send_customer_email($customer_name, $customer_email, $customer_phone, $event_date,
-                                  $event_location, $package_name, $extras_names_str);
+        self::send_customer_email($customer_first_name, $customer_last_name, $customer_email, $customer_phone, 
+                                  $event_date, $event_location, $package_name, $extras_names_str);
 
         // Redirect with success message
         wp_safe_redirect(add_query_arg('pbqr_success', '1', wp_get_referer()));
         exit;
     }
 
-    private static function send_admin_email($name, $email, $phone, $event_type, $date, $time, $location, 
-                                             $hours, $package, $extras, $message, $company, $street, 
-                                             $postal_code, $city, $country) {
+    private static function send_admin_email($first_name, $last_name, $email, $phone, $company, $street, 
+                                             $postal_code, $city, $country, $event_type, $date, $time, 
+                                             $location, $hours, $package, $extras, $message) {
         $admin_email = get_option('admin_email');
         $site_name = get_bloginfo('name');
         $site_url = get_bloginfo('url');
@@ -115,7 +118,7 @@ class PBQR_Form_Handler {
         $user_ip = self::get_user_ip();
         $referrer = isset($_SERVER['HTTP_REFERER']) ? sanitize_url($_SERVER['HTTP_REFERER']) : 'Direkt';
         
-        $subject = 'Neue Fotobox-Angebotsanfrage - ' . $name;
+        $subject = 'Neue Fotobox-Angebotsanfrage - ' . $first_name . ' ' . $last_name;
         
         $body = "
 <!DOCTYPE html>
@@ -130,7 +133,7 @@ class PBQR_Form_Handler {
         .section-title { font-weight: bold; color: #333; font-size: 14px; margin-bottom: 10px; }
         .row { display: flex; justify-content: space-between; margin: 8px 0; }
         .label { font-weight: bold; color: #666; width: 150px; }
-        .value { color: #333; }
+        .value { color: #333; flex: 1; }
         .meta { font-size: 12px; color: #999; margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd; }
         .action-button { display: inline-block; background: #0073aa; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin: 10px 5px 10px 0; font-weight: bold; }
         .footer { background: #f5f5f5; padding: 15px; margin: 20px -20px -20px -20px; text-align: center; font-size: 12px; color: #999; }
@@ -139,14 +142,14 @@ class PBQR_Form_Handler {
 <body>
     <div class=\"container\">
         <div class=\"header\">
-            <h1 class=\"h1\">📩 Neue Fotobox-Angebotsanfrage</h1>
+            <h1 class=\"h1\">📋 Neue Fotobox-Angebotsanfrage</h1>
         </div>
         
         <div class=\"section\">
             <div class=\"section-title\">KUNDENINFORMATIONEN</div>
             <div class=\"row\">
                 <span class=\"label\">Name:</span>
-                <span class=\"value\">$name</span>
+                <span class=\"value\">$first_name $last_name</span>
             </div>
             " . ($company ? "<div class=\"row\">
                 <span class=\"label\">Firma:</span>
@@ -162,19 +165,19 @@ class PBQR_Form_Handler {
             </div>
             <div class=\"row\">
                 <span class=\"label\">Adresse:</span>
-                <span class=\"value\">$street, $postal_code $city, $country</span>
+                <span class=\"value\">$street<br>$postal_code $city<br>$country</span>
             </div>
         </div>
         
         <div class=\"section\">
             <div class=\"section-title\">VERANSTALTUNGSDETAILS</div>
             <div class=\"row\">
-                <span class=\"label\">Art:</span>
+                <span class=\"label\">Veranstaltungstyp:</span>
                 <span class=\"value\">$event_type</span>
             </div>
             <div class=\"row\">
                 <span class=\"label\">Datum:</span>
-                <span class=\"value\">$date</span>
+                <span class=\"value\">" . date('d.m.Y', strtotime($date)) . "</span>
             </div>
             <div class=\"row\">
                 <span class=\"label\">Uhrzeit:</span>
@@ -217,7 +220,7 @@ class PBQR_Form_Handler {
             <strong>Zusätzliche Informationen:</strong><br>
             Benutzer-IP-Adresse: $user_ip<br>
             Einreichungsquelle: $referrer<br>
-            Eingereicht: " . current_time('d.m.Y \u\m H:i \U\h\r') . "<br>
+            Eingereicht: " . current_time('d.m.Y \\u\\m H:i \\U\\h\\r') . "<br>
             Website: <a href=\"$site_url\">$site_name</a>
         </div>
         
@@ -234,7 +237,7 @@ class PBQR_Form_Handler {
         wp_mail($admin_email, $subject, $body, $headers);
     }
 
-    private static function send_customer_email($name, $email, $phone, $date, $location, $package, $extras) {
+    private static function send_customer_email($first_name, $last_name, $email, $phone, $date, $location, $package, $extras) {
         $site_name = get_bloginfo('name');
         $site_url = get_bloginfo('url');
         
@@ -253,7 +256,7 @@ class PBQR_Form_Handler {
         .section-title { font-weight: bold; color: #333; font-size: 14px; margin-bottom: 10px; }
         .row { display: flex; justify-content: space-between; margin: 8px 0; }
         .label { font-weight: bold; color: #666; width: 150px; }
-        .value { color: #333; }
+        .value { color: #333; flex: 1; }
         .success-box { background: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; margin: 20px 0; }
         .success-text { color: #155724; }
         .footer { background: #f5f5f5; padding: 15px; margin: 20px -20px -20px -20px; text-align: center; font-size: 12px; color: #999; }
@@ -265,10 +268,10 @@ class PBQR_Form_Handler {
             <h1 class=\"h1\">✓ Angebotsanfrage erhalten</h1>
         </div>
         
-        <p>Hallo $name,</p>
+        <p>Hallo $first_name,</p>
         
         <div class=\"success-box\">
-            <p class=\"success-text\"><strong>Vielen Dank für Ihre Fotobox-Anfrage!</strong> Wir haben Ihre Angebotsanfrage erhalten und werden sie in Kürze prüfen.</p>
+            <p class=\"success-text\"><strong>Vielen Dank für Ihre Fotobox-Anfrage!</strong> Wir haben Ihre Angebotsanfrage erhalten und werden sie in Kürze überprüfen.</p>
         </div>
         
         <p>Wir freuen uns über Ihr Interesse an $site_name. Unser Team wird Ihre Anfrage bearbeiten und sich innerhalb von 24 Stunden mit einem detaillierten Angebot bei Ihnen melden.</p>
@@ -277,7 +280,7 @@ class PBQR_Form_Handler {
             <div class=\"section-title\">IHRE ANFRAGE - ZUSAMMENFASSUNG</div>
             <div class=\"row\">
                 <span class=\"label\">Datum:</span>
-                <span class=\"value\">$date</span>
+                <span class=\"value\">" . date('d.m.Y', strtotime($date)) . "</span>
             </div>
             <div class=\"row\">
                 <span class=\"label\">Ort:</span>
@@ -295,7 +298,7 @@ class PBQR_Form_Handler {
         
         <div class=\"section\">
             <div class=\"section-title\">WIE GEHT ES WEITER?</div>
-            <p>1. Unser Team prüft Ihre Angebotsanfrage<br>
+            <p>1. Unser Team überprüft Ihre Angebotsanfrage<br>
                2. Wir erstellen ein detailliertes Angebot mit Preisen<br>
                3. Sie erhalten das Angebot per E-Mail<br>
                4. Sie können bestätigen oder mit uns besprechen</p>
